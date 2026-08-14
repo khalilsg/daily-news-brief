@@ -22,12 +22,91 @@ git pull --ff-only || { echo "FATAL: git pull failed; not overwriting anything";
 # date-checking and formatting against a fixed contract, and the context grows
 # large enough that per-token price dominates the cost of a morning. Raise it
 # only if brief quality visibly drops.
+#
+# --output-format json makes the run emit a single result object rather than
+# the brief text, so stdout goes to a temp file instead of the log; the brief is
+# pulled back out of it below and printed, leaving the log as readable as it was.
+# The point is the usage block that comes with it: token counts and cost
+# straight from the API, recorded per run. Session transcripts are pruned after
+# ~30 days ("cleanupPeriodDays"), so reconstructing this later is not an option.
+RUN_JSON="$(mktemp)"
+trap 'rm -f "$RUN_JSON"' EXIT
+
 claude -p "Run my daily news summary. Read the daily-news-summary skill and follow it exactly." \
   --model sonnet \
+  --output-format json \
   --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Bash" \
   --permission-mode acceptEdits \
-  --max-turns 60
+  --max-turns 60 > "$RUN_JSON"
 STATUS=$?
+
+# Print the brief and append one row to the usage record. This runs before the
+# status check on purpose: a failed run still costs tokens, and those are the
+# runs worth being able to see. Accounting must never change the run's outcome,
+# so every failure here is a note, not a FATAL.
+python3 - "$RUN_JSON" "$LOG_DIR/usage.tsv" "$STAMP" "$STATUS" <<'PY'
+import json, os, sys
+
+src, tsv, stamp, status = sys.argv[1:5]
+
+try:
+    with open(src) as fh:
+        run = json.load(fh)
+except (OSError, ValueError):
+    run = None
+
+if run is None:
+    # Not JSON: the run died before emitting a result object. Show whatever it
+    # did write, so the operator is not left with an empty log.
+    try:
+        with open(src, errors="replace") as fh:
+            raw = fh.read(4000).strip()
+        if raw:
+            print(raw)
+    except OSError:
+        pass
+    run = {}
+else:
+    print(run.get("result") or "")
+
+usage = run.get("usage") or {}
+inp = usage.get("input_tokens", 0)
+cr = usage.get("cache_read_input_tokens", 0)
+cw = usage.get("cache_creation_input_tokens", 0)
+out = usage.get("output_tokens", 0)
+searches = (usage.get("server_tool_use") or {}).get("web_search_requests", 0)
+cost = run.get("total_cost_usd")
+models = ",".join(sorted((run.get("modelUsage") or {}).keys()))
+duration = run.get("duration_ms")
+
+row = [
+    stamp,
+    status,
+    run.get("num_turns", ""),
+    inp,
+    cr,
+    cw,
+    out,
+    inp + cr + cw,
+    searches,
+    f"{cost:.4f}" if isinstance(cost, (int, float)) else "",
+    round(duration / 1000) if isinstance(duration, (int, float)) else "",
+    models,
+]
+
+header = "date\tstatus\tturns\tinput\tcache_read\tcache_write\toutput\tbilled_in\tsearches\tcost_usd\tsecs\tmodels"
+new = not os.path.exists(tsv) or os.path.getsize(tsv) == 0
+with open(tsv, "a") as fh:
+    if new:
+        fh.write(header + "\n")
+    fh.write("\t".join(str(c) for c in row) + "\n")
+
+if cost is not None:
+    print(f"\n=== usage: {inp + cr + cw:,} billed input + {out:,} output tokens, "
+          f"{searches} searches, ${cost:.2f} — appended to {tsv}")
+PY
+[ $? -eq 0 ] || echo "NOTE: could not record usage for this run"
+
 if [ $STATUS -ne 0 ]; then
   echo "FATAL: claude exited $STATUS; leaving the repo untouched"
   exit $STATUS
