@@ -60,7 +60,8 @@ Applies to every section, including watchlist items.
   old — even if it still ranks prominently in search results.
 - **Duplicate-day check:** before finalizing selection, read the most recent day(s) already
   recorded in `brief.md` (if the archive file exists in the working directory) — yesterday's
-  entry at minimum, further back for slower-moving stories — and drop any candidate that already
+  entry at minimum, further back for slower-moving stories (see "Reading the archive" below for
+  how to pull just those days) — and drop any candidate that already
   appeared there. A story counts as a duplicate if it covers the same underlying event or
   development, even if today's headline is worded differently (e.g. a creator's death reported
   again a day later). This is a silent drop like the others — no "as reported yesterday" callout,
@@ -94,7 +95,8 @@ Applies to every section, including watchlist items.
    its mapped topic section, not treated separately.
 4. If `brief.md` exists in the working directory, read its most recent day (and further back for
    anything that looks like a slow-moving story) so candidates can be checked against it in the
-   next step.
+   next step. Pull those days with the command in "Reading the archive" below — never read the
+   whole file.
 5. Select the most significant, distinct, and genuinely recent (last 24–48 hours) stories per
    topic, aiming for that topic's target story count from the interests file. Prioritize real
    developments over speculation, rumors, or opinion pieces. Avoid duplicates covering the same
@@ -130,6 +132,22 @@ Never run git commands here.
 **If `brief.md` is not in the working directory, skip this section entirely** and produce only
 the chat message. That is the normal case for an ad-hoc request rather than the scheduled run;
 don't create the file, don't mention its absence.
+
+### Reading the archive
+
+The archive holds up to 90 days, so it grows to hundreds of kilobytes — far too large to read
+into context, and the duplicate-day check never needs more than the newest few days. Never open
+`brief.md` with a plain file read. Pull only the days you need:
+
+```bash
+awk '/^<!-- day:/{n++} n>2{exit} {print}' brief.md
+```
+
+`n>2` yields the two newest days; raise it to look further back for a slow-moving story, and
+raise it only that far. Run this once and work from the result — re-reading the archive costs
+the same again on every later turn.
+
+### Writing today's entry
 
 Steps:
 

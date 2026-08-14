@@ -18,7 +18,12 @@ cd "$REPO" || { echo "FATAL: no repo at $REPO"; exit 1; }
 
 git pull --ff-only || { echo "FATAL: git pull failed; not overwriting anything"; exit 1; }
 
+# --model is pinned rather than left to the default: this run is search,
+# date-checking and formatting against a fixed contract, and the context grows
+# large enough that per-token price dominates the cost of a morning. Raise it
+# only if brief quality visibly drops.
 claude -p "Run my daily news summary. Read the daily-news-summary skill and follow it exactly." \
+  --model sonnet \
   --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Bash" \
   --permission-mode acceptEdits \
   --max-turns 60
