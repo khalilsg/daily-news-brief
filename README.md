@@ -174,6 +174,12 @@ that day rather than appending a duplicate.
 
 ---
 
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
 ## Testing without spending a generation
 
 Clone into a scratch directory, repoint `origin` at a local bare repo, and run the wrapper with
