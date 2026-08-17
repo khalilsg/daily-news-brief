@@ -9,6 +9,20 @@ REPO="${BRIEF_REPO:-$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." &&
 LOG_DIR="${BRIEF_LOGS:-$HOME/.local/state/morning-brief}"
 STAMP="$(date +%Y-%m-%d)"
 
+# The archive, relative to $REPO, named once so every check, revert and commit
+# below goes through one path. Two layouts are supported: outputs grouped under
+# content/, or a flat repo with brief.md at the root. Detected rather than
+# configured so the same wrapper works in either without editing. BRIEF_FILE
+# overrides if a repo does something else.
+BRIEF="${BRIEF_FILE:-}"
+if [ -z "$BRIEF" ]; then
+  if [ -f "$REPO/content/outputs/brief.md" ]; then
+    BRIEF="content/outputs/brief.md"
+  else
+    BRIEF="brief.md"
+  fi
+fi
+
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/$STAMP.log"
 exec > >(tee -a "$LOG") 2>&1
@@ -117,25 +131,25 @@ fi
 # indistinguishable from a quiet news day. The brief's newest day marker is the
 # real success signal — the skill always writes today's entry, however few
 # sections survive its recency rules.
-TOP_DAY="$(sed -n 's/^<!-- day:\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\) -->$/\1/p' brief.md 2>/dev/null | head -1)"
+TOP_DAY="$(sed -n 's/^<!-- day:\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\) -->$/\1/p' "$BRIEF" 2>/dev/null | head -1)"
 if [ "$TOP_DAY" != "$STAMP" ]; then
-  echo "FATAL: brief.md's newest entry is '${TOP_DAY:-none}', expected $STAMP."
+  echo "FATAL: $BRIEF's newest entry is '${TOP_DAY:-none}', expected $STAMP."
   echo "       The generation did not write today's brief. Nothing committed."
-  if ! git diff --quiet -- brief.md; then
-    cp brief.md "$LOG_DIR/failed-$STAMP.brief.md"
-    echo "       Partial brief.md saved to $LOG_DIR/failed-$STAMP.brief.md;"
+  if ! git diff --quiet -- "$BRIEF"; then
+    cp "$BRIEF" "$LOG_DIR/failed-$STAMP.brief.md"
+    echo "       Partial brief saved to $LOG_DIR/failed-$STAMP.brief.md;"
     echo "       reverting it so tomorrow's 'git pull --ff-only' isn't blocked."
-    git checkout -- brief.md
+    git checkout -- "$BRIEF"
   fi
   exit 1
 fi
 
-if git diff --quiet -- brief.md; then
-  echo "NOTE: brief.md already carried $STAMP and is unchanged — nothing committed"
+if git diff --quiet -- "$BRIEF"; then
+  echo "NOTE: $BRIEF already carried $STAMP and is unchanged — nothing committed"
   exit 0
 fi
 
-git add brief.md
+git add "$BRIEF"
 git commit -m "Brief for $STAMP" || { echo "FATAL: commit failed"; exit 1; }
 git push || { echo "FATAL: push failed; commit is local, run 'git push' by hand"; exit 1; }
 echo "=== $(date -Is) done: pushed ==="

@@ -4,7 +4,7 @@ description: "Use when the user asks for a daily/morning news summary, news brie
 ---
 
 Produce the user's daily news summary as the chat message. When the run has an archive file
-(`brief.md` in the working directory), also prepend the day to it — see "Archive file" below.
+(`brief.md`, see "Where the files live"), also prepend the day to it — see "Archive file" below.
 
 Everything about *what* the brief covers — topics, section order, story counts, tracked people
 and franchises, source preferences — lives in a separate config file, not in this skill. This
@@ -17,9 +17,24 @@ truly necessary. Only take "write" actions (sending, posting, creating, updating
 other tools) if explicitly asked; otherwise the chat message and the in-place update to
 `brief.md` are the only outputs.
 
+## Where the files live
+
+Three files matter. All paths are relative to the working directory, and the rest of this skill
+refers to them by short name:
+
+| Short name | Path | Role |
+| --- | --- | --- |
+| `news-interests.md` | `content/inputs/news-interests.md` | input, hand-edited |
+| `brief.md` | `content/outputs/brief.md` | output, generated — never hand-edited |
+| `releases.md` | `content/outputs/releases.md` | optional input from a separate job |
+
+**If there is no `content/` directory, look for all three at the working-directory root instead**
+(`news-interests.md`, `brief.md`, `releases.md`). That is the older flat layout and it still
+works — check `content/` first, fall back to the root, and use whichever you find.
+
 ## Interests file
 
-Read `news-interests.md` from the working directory before anything else. It defines:
+Read `news-interests.md` before anything else. It defines:
 
 - **Topics** — a numbered, priority-ordered list. Each becomes a section of the brief, using the
   topic's heading as the section title, in the order given. Each topic may carry a description
@@ -59,7 +74,7 @@ Applies to every section, including watchlist items.
   or trend pieces with no fresh news peg, and any story whose dated coverage is more than ~2 days
   old — even if it still ranks prominently in search results.
 - **Duplicate-day check:** before finalizing selection, read the most recent day(s) already
-  recorded in `brief.md` (if the archive file exists in the working directory) — yesterday's
+  recorded in `brief.md` (if the archive file exists) — yesterday's
   entry at minimum, further back for slower-moving stories (see "Reading the archive" below for
   how to pull just those days) — and drop any candidate that already
   appeared there. A story counts as a duplicate if it covers the same underlying event or
@@ -83,7 +98,7 @@ Applies to every section, including watchlist items.
 
 ## Steps
 
-1. Read `news-interests.md` from the working directory (see "Interests file" above).
+1. Read `news-interests.md` (see "Where the files live" and "Interests file" above).
 2. Use WebSearch to find today's major stories in each topic from that file — run separate
    targeted searches per topic, using its suggested searches where given, rather than one generic
    query. Include the actual current date in searches where useful (e.g. "[topic] news [current
@@ -93,7 +108,7 @@ Applies to every section, including watchlist items.
    if it's an actual news development from the last 1–2 days, not background/evergreen content or
    an older announcement still circulating in search results. A watchlist hit gets folded into
    its mapped topic section, not treated separately.
-4. If `brief.md` exists in the working directory, read its most recent day (and further back for
+4. If `brief.md` exists, read its most recent day (and further back for
    anything that looks like a slow-moving story) so candidates can be checked against it in the
    next step. Pull those days with the command in "Reading the archive" below — never read the
    whole file.
@@ -114,7 +129,7 @@ Applies to every section, including watchlist items.
    A fresh watchlist story is just another story in its section, in no particular position
    relative to the others. Keep it scannable, no excessive formatting. Drop a section entirely
    and silently if nothing substantive (fresh and non-duplicate) turned up for it that day. If a
-   `radar.md` file is present, append a "Release Radar" section after the topic sections — see
+   `releases.md` file is present, append a "Release Radar" section after the topic sections — see
    "Release Radar" below.
 7. End the message with the last story (plus the Sources list). Do NOT append a closing line
    inviting feedback, offering to adjust topics/depth/format, or any similar sign-off. The
@@ -125,17 +140,17 @@ Applies to every section, including watchlist items.
 
 ## Release Radar
 
-An unrelated, optional job may drop a `radar.md` file in the working directory before this skill
+An unrelated, optional job may drop a `releases.md` file before this skill
 runs — a separate tracker watching for dated releases (games, movies, whatever it's configured
 for) matching some standing watchlist. This skill doesn't know or care what that watchlist
-contains; it only ever reads `radar.md` as a finished, pre-formatted block to fold in verbatim.
+contains; it only ever reads `releases.md` as a finished, pre-formatted block to fold in verbatim.
 
-- **If `radar.md` doesn't exist, skip this entirely.** Most setups won't have this job configured
+- **If `releases.md` doesn't exist, skip this entirely.** Most setups won't have this job configured
   — don't mention its absence, don't create the file.
 - If it exists, read its `<!-- generated:TIMESTAMP -->` marker on the first line. If that
   timestamp is more than ~36 hours old, the tracker didn't run today — still include the section,
   but prefix it with one line noting it's stale (e.g. "_Release radar last updated Aug 10._").
-  Never let a missing, stale, or malformed `radar.md` block or delay the rest of the brief.
+  Never let a missing, stale, or malformed `releases.md` block or delay the rest of the brief.
 - Otherwise, add a "Release Radar" section (chat message and archive entry both) using the file's
   "Changes since last run" and "Upcoming" content directly — same silent-drop principle as every
   other section: if a block is empty, omit it, don't note that nothing changed.
@@ -148,7 +163,7 @@ Never run git commands here.
 
 `build_brief.py` sits beside this SKILL.md and does the assembly.
 
-**If `brief.md` is not in the working directory, skip this section entirely** and produce only
+**If `brief.md` is not present, skip this section entirely** and produce only
 the chat message. That is the normal case for an ad-hoc request rather than the scheduled run;
 don't create the file, don't mention its absence.
 
@@ -159,7 +174,7 @@ into context, and the duplicate-day check never needs more than the newest few d
 `brief.md` with a plain file read. Pull only the days you need:
 
 ```bash
-awk '/^<!-- day:/{n++} n>2{exit} {print}' brief.md
+awk '/^<!-- day:/{n++} n>2{exit} {print}' content/outputs/brief.md
 ```
 
 `n>2` yields the two newest days; raise it to look further back for a slow-moving story, and
@@ -209,7 +224,7 @@ Steps:
 
 ```bash
 python3 .claude/skills/daily-news-summary/build_brief.py \
-  --today /tmp/today.json --prev brief.md --out brief.md
+  --today /tmp/today.json --prev content/outputs/brief.md --out content/outputs/brief.md
 ```
 
    Reading and writing the same path is safe — the builder reads the whole file before writing.
