@@ -113,13 +113,32 @@ Applies to every section, including watchlist items.
    followed by 1–2 plain sentences summarizing it, with the source name noted (e.g. "— Reuters").
    A fresh watchlist story is just another story in its section, in no particular position
    relative to the others. Keep it scannable, no excessive formatting. Drop a section entirely
-   and silently if nothing substantive (fresh and non-duplicate) turned up for it that day.
+   and silently if nothing substantive (fresh and non-duplicate) turned up for it that day. If a
+   `radar.md` file is present, append a "Release Radar" section after the topic sections — see
+   "Release Radar" below.
 7. End the message with the last story (plus the Sources list). Do NOT append a closing line
    inviting feedback, offering to adjust topics/depth/format, or any similar sign-off. The
    summary just ends.
 8. Update the archive file (see "Archive file" below), if this run has one. It carries the same
    stories as the chat message — never a different or trimmed selection.
 9. End with the chat message. Nothing after it.
+
+## Release Radar
+
+An unrelated, optional job may drop a `radar.md` file in the working directory before this skill
+runs — a separate tracker watching for dated releases (games, movies, whatever it's configured
+for) matching some standing watchlist. This skill doesn't know or care what that watchlist
+contains; it only ever reads `radar.md` as a finished, pre-formatted block to fold in verbatim.
+
+- **If `radar.md` doesn't exist, skip this entirely.** Most setups won't have this job configured
+  — don't mention its absence, don't create the file.
+- If it exists, read its `<!-- generated:TIMESTAMP -->` marker on the first line. If that
+  timestamp is more than ~36 hours old, the tracker didn't run today — still include the section,
+  but prefix it with one line noting it's stale (e.g. "_Release radar last updated Aug 10._").
+  Never let a missing, stale, or malformed `radar.md` block or delay the rest of the brief.
+- Otherwise, add a "Release Radar" section (chat message and archive entry both) using the file's
+  "Changes since last run" and "Upcoming" content directly — same silent-drop principle as every
+  other section: if a block is empty, omit it, don't note that nothing changed.
 
 ## Archive file
 
