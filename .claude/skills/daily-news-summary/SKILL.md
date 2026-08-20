@@ -154,6 +154,19 @@ contains; it only ever reads `releases.md` as a finished, pre-formatted block to
 - Otherwise, add a "Release Radar" section (chat message and archive entry both) using the file's
   "Changes since last run" and "Upcoming" content directly — same silent-drop principle as every
   other section: if a block is empty, omit it, don't note that nothing changed.
+- **Keep the list a list.** Every entry gets its own bullet on its own line, exactly as it appears
+  in the file. Never merge them into a run-on paragraph, and never separate them with periods on a
+  single line — this section is scanned for dates, not read as prose, so it stays a list even
+  though the topic sections above it are written as prose. Each block's lead-in is bold and ends
+  with a **colon**, not a period, with a blank line before the bullets:
+
+  ```
+  **Upcoming releases (next 30 days):**
+
+  - Sep 4 — cocoon: One Summer of Girlhood (theaters, limited)
+  - Sep 8 — The Paper Season 2 (Peacock)
+  - Sep 17 — Fire Emblem: Fortune's Weave (Nintendo Switch 2)
+  ```
 
 ## Archive file
 
