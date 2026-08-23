@@ -154,6 +154,11 @@ contains; it only ever reads `releases.md` as a finished, pre-formatted block to
 - Otherwise, add a "Release Radar" section (chat message and archive entry both) using the file's
   "Changes since last run" and "Upcoming" content directly — same silent-drop principle as every
   other section: if a block is empty, omit it, don't note that nothing changed.
+- **An "Awaiting approval" block is a count, not a list.** If the file has one, don't reproduce its
+  entries or its "ask to review" line. Close the section with a single italic line saying how many
+  there are — `_1 title pending review._`, or `_3 titles pending review._` for more than one. Those
+  titles are the tracker's own queue: nothing about them is settled yet, so they aren't news, and
+  the file itself is where the actual list gets read. No such block, no line.
 - **Keep the list a list.** Every entry gets its own bullet on its own line, exactly as it appears
   in the file. Never merge them into a run-on paragraph, and never separate them with periods on a
   single line — this section is scanned for dates, not read as prose, so it stays a list even
@@ -166,6 +171,8 @@ contains; it only ever reads `releases.md` as a finished, pre-formatted block to
   - Sep 4 — cocoon: One Summer of Girlhood (theaters, limited)
   - Sep 8 — The Paper Season 2 (Peacock)
   - Sep 17 — Fire Emblem: Fortune's Weave (Nintendo Switch 2)
+
+  _1 title pending review._
   ```
 
 ## Archive file
