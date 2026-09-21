@@ -244,12 +244,17 @@ Steps:
 
 ```bash
 python3 .claude/skills/daily-news-summary/build_brief.py \
-  --today /tmp/today.json --prev content/outputs/brief.md --out content/outputs/brief.md
+  --today /tmp/today.json --prev content/outputs/brief.md --out content/outputs/brief.md \
+  --days-dir content/outputs/days
 ```
 
    Reading and writing the same path is safe — the builder reads the whole file before writing.
    The builder validates the entry and fails loudly on a malformed one; fix the JSON rather than
-   working around it. It keeps 90 days.
+   working around it. It keeps 90 days in `brief.md`.
+
+   `--days-dir` also writes the entry to `content/outputs/days/<date>.json`, one file per day,
+   kept forever. `brief.md` is the readable archive and is capped; that directory is the
+   structured one and is not. Pass both — a day that reaches one and not the other is a bug.
 
 3. If the builder fails, say so plainly in one line at the end of the chat message and leave
    `brief.md` as it was. Do not hand-edit the file to compensate.

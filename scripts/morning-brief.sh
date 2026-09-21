@@ -23,6 +23,19 @@ if [ -z "$BRIEF" ]; then
   fi
 fi
 
+# The structured archive beside it: one JSON file per day, kept forever, which
+# is what anything other than a human reads. brief.md stays capped because a
+# single markdown file has a size ceiling; a directory of per-day files has no
+# such limit, so nothing prunes this. Follows the same layout detection so the
+# two always land together.
+DAYS="${BRIEF_DAYS_DIR:-}"
+if [ -z "$DAYS" ]; then
+  case "$BRIEF" in
+    content/outputs/*) DAYS="content/outputs/days" ;;
+    *) DAYS="days" ;;
+  esac
+fi
+
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/$STAMP.log"
 exec > >(tee -a "$LOG") 2>&1
@@ -141,15 +154,30 @@ if [ "$TOP_DAY" != "$STAMP" ]; then
     echo "       reverting it so tomorrow's 'git pull --ff-only' isn't blocked."
     git checkout -- "$BRIEF"
   fi
+  # The builder writes the day's JSON before it writes brief.md, so a run that
+  # died in between leaves one behind. Left in place it is worse than useless:
+  # a modified tracked file blocks tomorrow's `git pull --ff-only`, and an
+  # orphan new one claims a day the archive never got. Scoped to $DAYS, which
+  # holds nothing but generated output.
+  if [ -d "$REPO/$DAYS" ]; then
+    git checkout -- "$DAYS" 2>/dev/null || true
+    git clean -fq -- "$DAYS" 2>/dev/null || true
+  fi
   exit 1
 fi
 
-if git diff --quiet -- "$BRIEF"; then
+# Stage exactly the generated paths and nothing else -- never `git add -A`. An
+# uncommitted edit to the skill or a script must not ride along on a cron
+# commit. Decide on the staged set rather than on `git diff`, which cannot see
+# a brand new day file: that one is untracked.
+git add "$BRIEF"
+[ -d "$REPO/$DAYS" ] && git add "$DAYS"
+
+if git diff --cached --quiet; then
   echo "NOTE: $BRIEF already carried $STAMP and is unchanged — nothing committed"
   exit 0
 fi
 
-git add "$BRIEF"
 git commit -m "Brief for $STAMP" || { echo "FATAL: commit failed"; exit 1; }
 git push || { echo "FATAL: push failed; commit is local, run 'git push' by hand"; exit 1; }
 echo "=== $(date -Is) done: pushed ==="

@@ -8,10 +8,19 @@ markers, which GitHub hides when rendering.
     python3 build_brief.py --today today.json --prev brief.md --out brief.md
 
 --prev is optional; without it the file starts fresh with today alone.
+
+--days-dir is optional. Given one, the validated entry is also written there
+as <date>.json, one file per day, kept forever. That directory is the
+structured archive: brief.md is capped at MAX_DAYS because a single markdown
+file has a size ceiling, and nothing about a directory of per-day files does.
+It is written before brief.md on purpose -- if it cannot be written the run
+fails with the archive untouched, rather than leaving brief.md a day ahead of
+the structured copy.
 """
 
 import argparse
 import json
+import os
 import re
 import sys
 
@@ -78,11 +87,25 @@ def main():
     ap.add_argument("--today", required=True)
     ap.add_argument("--prev", help="previous brief.md pulled from GitHub")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--days-dir",
+                    help="also write the entry here as <date>.json, kept forever")
     args = ap.parse_args()
 
     with open(args.today, encoding="utf-8") as fh:
         entry = json.load(fh)
     validate(entry)
+
+    if args.days_dir:
+        # Before the archive, deliberately: see the module docstring.
+        try:
+            os.makedirs(args.days_dir, exist_ok=True)
+            day_path = os.path.join(args.days_dir, "%s.json" % entry["date"])
+            with open(day_path, "w", encoding="utf-8") as fh:
+                json.dump(entry, fh, ensure_ascii=False, indent=2)
+                fh.write("\n")
+        except OSError as exc:
+            raise SystemExit("could not write the per-day entry: %s" % exc)
+        print("wrote %s" % day_path)
 
     previous = ""
     if args.prev:
