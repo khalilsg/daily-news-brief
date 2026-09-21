@@ -23,6 +23,7 @@ import json
 import os
 import re
 import sys
+from datetime import datetime
 
 MAX_DAYS = 90
 HEADER = "# Morning Brief\n"
@@ -100,8 +101,15 @@ def main():
         try:
             os.makedirs(args.days_dir, exist_ok=True)
             day_path = os.path.join(args.days_dir, "%s.json" % entry["date"])
+            # When the brief was actually made, recorded here because nothing
+            # else survives: a file mtime is reset by any fresh clone, and a
+            # commit time is only a proxy for a step that happens afterwards.
+            # Local time with its offset, since the question being answered is
+            # "how old is this brief" and the reader is in one timezone.
+            day_entry = dict(entry)
+            day_entry["generated"] = datetime.now().astimezone().isoformat(timespec="seconds")
             with open(day_path, "w", encoding="utf-8") as fh:
-                json.dump(entry, fh, ensure_ascii=False, indent=2)
+                json.dump(day_entry, fh, ensure_ascii=False, indent=2)
                 fh.write("\n")
         except OSError as exc:
             raise SystemExit("could not write the per-day entry: %s" % exc)
