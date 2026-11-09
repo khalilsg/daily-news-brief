@@ -166,6 +166,20 @@ if [ "$TOP_DAY" != "$STAMP" ]; then
   exit 1
 fi
 
+# The check above passes for a brief with no news in it: every topic can be
+# dropped silently and the entry still gets written. Any one quiet section is
+# normal, so this is a warning rather than a failure -- the day still publishes
+# -- but a run with this few sections left should be visible in the log.
+# BRIEF_MIN_SECTIONS overrides the threshold.
+MIN_SECTIONS="${BRIEF_MIN_SECTIONS:-3}"
+NEWS_SECTIONS="$(python3 -c '
+import json, sys
+print(sum(s.get("title") != "Release Radar" for s in json.load(open(sys.argv[1]))["sections"]))
+' "$DAYS/$STAMP.json" 2>/dev/null)"
+if [ -n "$NEWS_SECTIONS" ] && [ "$NEWS_SECTIONS" -lt "$MIN_SECTIONS" ]; then
+  echo "WARN: only $NEWS_SECTIONS news section(s) in today's brief (expected at least $MIN_SECTIONS)"
+fi
+
 # Stage exactly the generated paths and nothing else -- never `git add -A`. An
 # uncommitted edit to the skill or a script must not ride along on a cron
 # commit. Decide on the staged set rather than on `git diff`, which cannot see

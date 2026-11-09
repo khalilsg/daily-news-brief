@@ -96,6 +96,27 @@ Applies to every section, including watchlist items.
   from the rest of that section. Only use this tag when the publish/event time genuinely supports
   it — don't guess or apply it loosely just because a story appeared in a "today" search.
 
+## Search depth
+
+Dropping a topic claims that nothing happened in it, so the drop has to be earned. These are
+floors, not targets, and they apply to every topic in the interests file.
+
+- **At least three searches per topic before it can be dropped**, each from a different angle: the
+  topic's suggested searches, a phrasing with no date in it ("latest [topic] news"), and a query
+  naming a specific outlet, company, league or event within the topic. Send a topic's searches
+  together in one turn rather than one at a time.
+- **A search that finds nothing dated is a failed query, not a quiet day.** Date-stamped queries
+  often come back empty because many news pages show no date in their snippet. Rerun without the
+  date, or with a narrower subject, before concluding anything.
+- **Open a source before giving up.** A result with no visible date is unverified, not stale. The
+  fetch pass in "Steps" is required for any topic that comes up short. Also use WebFetch on any
+  single promising candidate whose date search can't settle.
+- **Follow leads.** When a result names a specific announcement, event, deal or release, search for
+  it by name to get its real date and details.
+- **Depth finds candidates; it never relaxes the rules above.** Every story still has to pass the
+  recency requirement and the duplicate-day check, and a topic that comes up empty after all of
+  this is dropped silently, as ever.
+
 ## Steps
 
 1. Read `news-interests.md` (see "Where the files live" and "Interests file" above).
@@ -103,16 +124,26 @@ Applies to every section, including watchlist items.
    targeted searches per topic, using its suggested searches where given, rather than one generic
    query. Include the actual current date in searches where useful (e.g. "[topic] news [current
    date]") to bias toward fresh results, and prefer phrasing like "[topic] news last 24 hours" or
-   checking article bylines/dates over generic queries that surface evergreen roundups.
+   checking article bylines/dates over generic queries that surface evergreen roundups. "Search
+   depth" above sets the minimum effort per topic.
 3. Run one targeted search per watchlist entry (e.g. "[name] news today"). Only include a result
    if it's an actual news development from the last 1–2 days, not background/evergreen content or
    an older announcement still circulating in search results. A watchlist hit gets folded into
    its mapped topic section, not treated separately.
 4. If `brief.md` exists, read its most recent day (and further back for
-   anything that looks like a slow-moving story) so candidates can be checked against it in the
-   next step. Pull those days with the command in "Reading the archive" below — never read the
+   anything that looks like a slow-moving story) so candidates can be checked against it during
+   selection. Pull those days with the command in "Reading the archive" below — never read the
    whole file.
-5. Select the most significant, distinct, and genuinely recent (last 24–48 hours) stories per
+5. **Run the fetch pass. It is required, and a topic may not be dropped or left short without
+   it.** List each topic that has no confirmed fresh story, or fewer than the bottom of its target
+   story count from the interests file. For each one, read at least two pages with WebFetch: the
+   latest-news or section pages of outlets that appeared in that topic's search results, or that
+   the interests file prefers. If WebFetch is not already loaded, load it the same way as
+   WebSearch before starting. Send a topic's fetches together in one turn. If a page is blocked or
+   shows no dates, it doesn't count: try another outlet, up to four attempts per topic. Add any
+   fresh, non-duplicate stories you find as candidates. Do not start selecting or writing until
+   every listed topic has been through this.
+6. Select the most significant, distinct, and genuinely recent (last 24–48 hours) stories per
    topic, aiming for that topic's target story count from the interests file. Prioritize real
    developments over speculation, rumors, or opinion pieces. Avoid duplicates covering the same
    event within today's selection, and drop anything that already ran in a recent `brief.md`
@@ -122,7 +153,7 @@ Applies to every section, including watchlist items.
    confirmed from within the last 12 hours so they can get the "[Just in]" tag. When a candidate's
    exact date is ambiguous, run one more targeted search to pin down the actual event/publish
    date before including it.
-6. Write a chat message with a short one-line header (e.g. "Morning news — Tuesday, July 22"),
+7. Write a chat message with a short one-line header (e.g. "Morning news — Tuesday, July 22"),
    followed by the topic sections in the interests file's order. Under each, list stories as: a
    bold 1-line headline (prefixed with "[Just in]" if confirmed within the last 12 hours),
    followed by 1–2 plain sentences summarizing it, with the source name noted (e.g. "— Reuters").
@@ -131,12 +162,12 @@ Applies to every section, including watchlist items.
    and silently if nothing substantive (fresh and non-duplicate) turned up for it that day. If a
    `releases.md` file is present, append a "Release Radar" section after the topic sections — see
    "Release Radar" below.
-7. End the message with the last story (plus the Sources list). Do NOT append a closing line
+8. End the message with the last story (plus the Sources list). Do NOT append a closing line
    inviting feedback, offering to adjust topics/depth/format, or any similar sign-off. The
    summary just ends.
-8. Update the archive file (see "Archive file" below), if this run has one. It carries the same
+9. Update the archive file (see "Archive file" below), if this run has one. It carries the same
    stories as the chat message — never a different or trimmed selection.
-9. End with the chat message. Nothing after it.
+10. End with the chat message. Nothing after it.
 
 ## Release Radar
 
